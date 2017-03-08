@@ -2,7 +2,7 @@ var express = require('express');
 var router = express.Router();
 var mysql = require('mysql');
 var cors = require('cors')
-
+var db = require('../lib/db.js');
 
 /**
 * Setup DB connection
@@ -44,6 +44,17 @@ function handle_database(req,res) {
 router.get('/real', function(req, res, next) {
   handle_database(req,res);
 });
+
+router.get('/real2', function(req, res, next) {
+  db.connection.query("select * from BATCH_PROP_SETTINGS WHERE id=(SELECT max(id) FROM BATCH_PROP_SETTINGS)")
+            .on('result', function (row) {
+              res.json(row);
+            })
+            .on('error', function (err) {
+              callback({error: true, err: err});
+            });
+});
+
 
 /* GET sample settings */
 router.get('/', cors(), function(req, res, next) {
