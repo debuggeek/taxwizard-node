@@ -5,6 +5,7 @@ var cors = require('cors')
 
 var db = require('../lib/db.js');
 
+
 router.get('/', cors(), function(req, res, next) {
   res.type('json');
   res.send({
@@ -23,7 +24,6 @@ router.get('/', cors(), function(req, res, next) {
     });
 });
 
-/* GET users listing. */
 router.get('/total', function(req, res, next) {
   db.connection.query("SELECT COUNT(1) FROM `BATCH_PROP`")
             .on('result', function (row) {
@@ -54,29 +54,139 @@ router.get('/processed', function(req, res, next) {
             });
 });
 
+function getCurrBatchSettings(){
+  return new Promise((resolve, reject) => {
+    settingsPromise = db.conn.queryPromise("SELECT TrimIndicated, MultiHood,IncludeVU,IncludeMLS,NumPrevYears,"+
+                              "SqftRange,ClassRange,ClassRangeEnabled,PercentGood,PercentGoodEnabled,NetAdj,"+
+                              "NetAdjEnabled,ImpLimit,OnlyLowerComps "+
+                              "FROM BATCH_PROP_SETTINGS "+
+                              "WHERE id=(SELECT max(id) FROM BATCH_PROP_SETTINGS)");
+
+    settingsPromise.then(qResults => {
+      console.log("getCurrBatchSettings qResults=",qResults);
+      resolve(JSON.stringify(qResults[0].RowDataPacket));
+    }).catch(error => {
+      console.log(error);
+      reject(error);
+    });
+  });
+}
+
+router.get('/settings', function(req, res) {
+  settingsPromise = db.conn.queryPromise("SELECT TrimIndicated, MultiHood,IncludeVU,IncludeMLS,NumPrevYears,"+
+                              "SqftRange,ClassRange,ClassRangeEnabled,PercentGood,PercentGoodEnabled,NetAdj,"+
+                              "NetAdjEnabled,ImpLimit,OnlyLowerComps "+
+                              "FROM BATCH_PROP_SETTINGS "+
+                              "WHERE id=(SELECT max(id) FROM BATCH_PROP_SETTINGS)");
+
+  settingsPromise.then(qResults => {
+    console.log(qResults);
+    res.json(qResults[0]);
+  }).catch(error => {
+    console.log(error);
+  });
+});
+
+function copyFields(target, source) {
+  for (var field in target) {
+    console.log("Looking for " + field);
+    console.log("how bout " + target[field]);
+    if (source.hasOwnProperty(field)) {
+      console.log("Found field " + field);
+      target[field] = source[field];
+    }
+  }
+}
+
+router.post('/settings', function(req,res) {
+  let updateOld = {
+    TrimIndicated: false,
+    MultiHood: false,
+    IncludeVU: false,
+    IncludeMLS: false,
+    NumPrevYears: 1,
+    SqftRange: 0,
+    ClassRange: 0,
+    ClassRangeEnabled: 0,
+    PercentGood: 10,
+    PercentGoodEnabled: 0,
+    NetAdj: 0,
+    NetAdjEnabled: 0,
+  };
+  let updateProm = getCurrBatchSettings();
+
+  updateProm.then(update => {
+    console.log("update=", update);
+    let postData = req.body;
+    copyFields(update, postData);
+
+    settingsPromise = db.conn.queryPromise("INSERT INTO BATCH_PROP_SETTINGS " +
+                      "SET TrimIndicated = ?, MultiHood = ?, IncludeVU = ?, IncludeMLS = ?",
+                      [
+                        update['TrimIndicated'],
+                        update['MultiHood'],
+                        update['IncludeVU'],
+                        update['IncludeMLS']
+                      ]
+                      );
+    // settingsPromise = db.conn.queryPromise("INSERT INTO BATCH_PROP_SETTINGS
+    //                   SET TrimIndicated = ?, MultiHood = ?, IncludeVU = ?, IncludeMLS = ?, NumPrevYears = ?,
+    //                    SqftRange = ?, ClassRange = ?, ClassRangeEnabled = ?, PercentGood = ?, PercentGoodEnabled = ?,
+    //                    NetAdj = ?, NetAdjEnabled = ?, ImpLimit = ?")
+    settingsPromise.then(qResults => {
+      console.log(qResults);
+      res.json(qResults[0]);
+    }).catch(error => {
+      console.log(error);
+    });
+  });
+});
+
+router.get('/summary', function(req, res) {
+  let result = {"processed" : null, "unprocessed" : null, "total" : null};
+  completedPromise = db.conn.queryPromise("SELECT COUNT(1) FROM `BATCH_PROP` WHERE completed = 'true'");
+  uncomplePromise = db.conn.queryPromise("SELECT COUNT(1) FROM `BATCH_PROP` WHERE completed = 'false'");
+  totalPromise = db.conn.queryPromise("SELECT COUNT(1) FROM `BATCH_PROP`");
+  completedPromise.then(qResults => {
+    let count = qResults[0]['COUNT(1)'];
+    result.processed = count;
+    console.log(result);
+    uncomplePromise.then(qResults => {
+      let count = qResults[0]['COUNT(1)'];
+      result.unprocessed=count;
+      console.log(result);
+      totalPromise.then(qResults => {
+        let count = qResults[0]['COUNT(1)'];
+        result.total=count;
+        console.log(result);
+        res.json(result);
+      }).catch(error => {
+        console.log(error);
+      });
+    }).catch(error => {
+      console.log(error);
+    });
+  }).catch(error => {
+    console.log(error);
+  });
+
+});
+
 router.get('/all', function(req, res, next) {
-  var limit=10;
+  var limit=10000;
   var page=(typeof req.params.page!='undefined')?parseInt(req.params.page):1;
   var start=(page-1)*limit;
 
   var findings=[];
-  // var test = {};
-  // test.propid = "1";
-  // findings.push(test);
-// LIMIT % OFFSET %", limit, start)
-  db.connection.query("SELECT * FROM `BATCH_PROP` LIMIT ? OFFSET ?", [limit, start])
-            .on('result', function (row, findings) {
-            //  console.log("row=",row);
-              var finding={};
-              finding.propId = row['prop'];
-              findings.push(finding);
-            })
-            .on('error', function (err) {
-              callback({error: true, err: err});
-            });
-  // res.type('json');
-  console.log("findings=", findings);
-  res.send(findings);
+
+  qPromise = db.conn.queryPromise("SELECT prop,prop_mktval,Median_Sale5,Median_Sale10,Median_Sale15," +
+        "Median_Eq11,TotalComps FROM `BATCH_PROP` WHERE completed = 'true' LIMIT ? OFFSET ?", [limit, start]);
+  qPromise.then(qResults => {
+    console.log(qResults.length + " entries in BATCH_PROP");
+    res.json(qResults);
+  }).catch(error => {
+    console.log(error);
+  });
 });
 
 module.exports = router;
