@@ -73,9 +73,21 @@ function getCurrBatchSettings(){
 }
 
 router.get('/settings', function(req, res) {
-  settingsPromise = db.conn.queryPromise("SELECT TrimIndicated, MultiHood,IncludeVU,IncludeMLS,NumPrevYears,"+
-                              "SqftRange,ClassRange,ClassRangeEnabled,PercentGood,PercentGoodEnabled,NetAdj,"+
-                              "NetAdjEnabled,ImpLimit,OnlyLowerComps "+
+  settingsPromise = db.conn.queryPromise("SELECT TrimIndicated,"+
+                              "MultiHood,"+
+                              "IncludeVU,"+
+                              "IncludeMLS,"+
+                              "NumPrevYears,"+
+                              "SqftRangePct,SqftRangeMin,SqftRangeMax,"+
+                              "ClassRange,ClassRangeEnabled,"+
+                              "SaleRatioEnabled,SaleRatioMin,SaleRatioMax,"+
+                              "PercentGood,PercentGoodEnabled,PercentGoodMin,PercentGoodMax,"+
+                              "NetAdj,NetAdjEnabled,"+
+                              "ImpLimit,"+
+                              "LimitTcadScores,LimitTcadScoresAmount,TcadScoreLimitMin,TcadScoreLimitMax,"+
+                              "LimitToCurrentYearLowered,"+
+                              "GrossAdjFilterEnabled,"+
+                              "ShowTcadScores,ShowSaleRatios "+
                               "FROM BATCH_PROP_SETTINGS "+
                               "WHERE id=(SELECT max(id) FROM BATCH_PROP_SETTINGS)");
 
