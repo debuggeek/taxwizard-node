@@ -56,15 +56,28 @@ router.get('/processed', function(req, res, next) {
 
 function getCurrBatchSettings(){
   return new Promise((resolve, reject) => {
-    settingsPromise = db.conn.queryPromise("SELECT TrimIndicated, MultiHood,IncludeVU,IncludeMLS,NumPrevYears,"+
-                              "SqftRange,ClassRange,ClassRangeEnabled,PercentGood,PercentGoodEnabled,NetAdj,"+
-                              "NetAdjEnabled,ImpLimit,OnlyLowerComps "+
-                              "FROM BATCH_PROP_SETTINGS "+
-                              "WHERE id=(SELECT max(id) FROM BATCH_PROP_SETTINGS)");
+    settingsPromise = db.conn.queryPromise("SELECT TrimIndicated,"+
+                                                          "MultiHood,"+
+                                                          "IncludeVU,"+
+                                                          "IncludeMLS,"+
+                                                          "NumPrevYears,"+
+                                                          "SqftRangePct,SqftRangeMin,SqftRangeMax,"+
+                                                          "ClassRange,ClassRangeEnabled,"+
+                                                          "SaleRatioEnabled,SaleRatioMin,SaleRatioMax,"+
+                                                          "PercentGood,PercentGoodEnabled,PercentGoodMin,PercentGoodMax,"+
+                                                          "NetAdj,NetAdjEnabled,"+
+                                                          "ImpLimit,"+
+                                                          "LimitTcadScores,LimitTcadScoresAmount,TcadScoreLimitMin,TcadScoreLimitMax,"+
+                                                          "LimitToCurrentYearLowered,"+
+                                                          "GrossAdjFilterEnabled,"+
+                                                          "ShowTcadScores,ShowSaleRatios "+
+                                                          "FROM BATCH_PROP_SETTINGS "+
+                                                          "WHERE id=(SELECT max(id) FROM BATCH_PROP_SETTINGS)");
 
     settingsPromise.then(qResults => {
-      console.log("getCurrBatchSettings qResults=",qResults);
-      resolve(JSON.stringify(qResults[0].RowDataPacket));
+      var results = JSON.stringify(qResults[0]);
+      console.log("getCurrBatchSettings results=", results);
+      resolve(results);
     }).catch(error => {
       console.log(error);
       reject(error);
@@ -73,24 +86,9 @@ function getCurrBatchSettings(){
 }
 
 router.get('/settings', function(req, res) {
-  settingsPromise = db.conn.queryPromise("SELECT TrimIndicated,"+
-                              "MultiHood,"+
-                              "IncludeVU,"+
-                              "IncludeMLS,"+
-                              "NumPrevYears,"+
-                              "SqftRangePct,SqftRangeMin,SqftRangeMax,"+
-                              "ClassRange,ClassRangeEnabled,"+
-                              "SaleRatioEnabled,SaleRatioMin,SaleRatioMax,"+
-                              "PercentGood,PercentGoodEnabled,PercentGoodMin,PercentGoodMax,"+
-                              "NetAdj,NetAdjEnabled,"+
-                              "ImpLimit,"+
-                              "LimitTcadScores,LimitTcadScoresAmount,TcadScoreLimitMin,TcadScoreLimitMax,"+
-                              "LimitToCurrentYearLowered,"+
-                              "GrossAdjFilterEnabled,"+
-                              "ShowTcadScores,ShowSaleRatios "+
-                              "FROM BATCH_PROP_SETTINGS "+
-                              "WHERE id=(SELECT max(id) FROM BATCH_PROP_SETTINGS)");
-
+  settingsPromise = new Promise((resolve,reject) => {
+    resolve(getCurrBatchSettings());
+  });
   settingsPromise.then(qResults => {
     console.log(qResults);
     res.json(qResults[0]);
@@ -99,52 +97,47 @@ router.get('/settings', function(req, res) {
   });
 });
 
+function getColName(string){
+  switch(string){
+    case 'mlsMultiYear':
+      return 'NumPrevYears';
+    default:
+      console.log("No column found to match ", string);
+      return '';
+  }
+}
+
 function copyFields(target, source) {
-  for (var field in target) {
+  for (var field in source) {
     console.log("Looking for " + field);
-    console.log("how bout " + target[field]);
-    if (source.hasOwnProperty(field)) {
-      console.log("Found field " + field);
+    let colName = getColName(field);
+    if (target.hasOwnProperty("NumPrevYears")) {
+      console.log("Found field " + colName);
       target[field] = source[field];
     }
   }
 }
 
 router.post('/settings', function(req,res) {
-  let updateOld = {
-    TrimIndicated: false,
-    MultiHood: false,
-    IncludeVU: false,
-    IncludeMLS: false,
-    NumPrevYears: 1,
-    SqftRange: 0,
-    ClassRange: 0,
-    ClassRangeEnabled: 0,
-    PercentGood: 10,
-    PercentGoodEnabled: 0,
-    NetAdj: 0,
-    NetAdjEnabled: 0,
-  };
   let updateProm = getCurrBatchSettings();
 
-  updateProm.then(update => {
-    console.log("update=", update);
+  updateProm.then(updateJson => {
+    let update = JSON.parse(updateJson);
+    // console.log("update=", update);
     let postData = req.body;
     copyFields(update, postData);
-
+    // console.log("updatePostCopy=", update);
+    update.TrimIndicated = 0;
     settingsPromise = db.conn.queryPromise("INSERT INTO BATCH_PROP_SETTINGS " +
-                      "SET TrimIndicated = ?, MultiHood = ?, IncludeVU = ?, IncludeMLS = ?",
+                      "SET TrimIndicated = ?, MultiHood = ?, IncludeVU = ?, IncludeMLS = ?, NumPrevYears = ?",
                       [
-                        update['TrimIndicated'],
+                        update.TrimIndicated,
                         update['MultiHood'],
                         update['IncludeVU'],
-                        update['IncludeMLS']
+                        update['IncludeMLS'],
+                        update['NumPrevYears']
                       ]
                       );
-    // settingsPromise = db.conn.queryPromise("INSERT INTO BATCH_PROP_SETTINGS
-    //                   SET TrimIndicated = ?, MultiHood = ?, IncludeVU = ?, IncludeMLS = ?, NumPrevYears = ?,
-    //                    SqftRange = ?, ClassRange = ?, ClassRangeEnabled = ?, PercentGood = ?, PercentGoodEnabled = ?,
-    //                    NetAdj = ?, NetAdjEnabled = ?, ImpLimit = ?")
     settingsPromise.then(qResults => {
       console.log(qResults);
       res.json(qResults[0]);
