@@ -75,8 +75,8 @@ function getCurrBatchSettings(){
                                                           "WHERE id=(SELECT max(id) FROM BATCH_PROP_SETTINGS)");
 
     settingsPromise.then(qResults => {
-      var results = JSON.stringify(qResults[0]);
-      console.log("getCurrBatchSettings results=", results);
+      var results = qResults[0];
+      //console.log("getCurrBatchSettings results=", results);
       resolve(results);
     }).catch(error => {
       console.log(error);
@@ -91,56 +91,76 @@ router.get('/settings', function(req, res) {
   });
   settingsPromise.then(qResults => {
     console.log(qResults);
-    res.json(qResults[0]);
+    res.json(qResults);
   }).catch(error => {
     console.log(error);
   });
 });
 
 function getColName(string){
-  switch(string){
-    case 'mlsMultiYear':
-      return 'NumPrevYears';
-    default:
-      console.log("No column found to match ", string);
-      return '';
+  let colMap = {'onlyLowerComps':'TrimIndicated','multiHood':'MultiHood,','includeVU':'IncludeVU', 'mlsMultiYear':'NumPrevYears',
+  'sqftRangePct':'SqftRangePct',
+  'showTcadScores':'ShowTcadScores'};
+
+  if(colMap.hasOwnProperty(string)){
+    return colMap[string];
   }
+
+  console.log("No column found to match ", string);
+  return '';
 }
 
 function copyFields(target, source) {
+  let tracing = true;
   for (var field in source) {
-    console.log("Looking for " + field);
     let colName = getColName(field);
-    if (target.hasOwnProperty("NumPrevYears")) {
-      console.log("Found field " + colName);
-      target[field] = source[field];
+    if(tracing) console.log("Looking for " + field + " with colName " + colName);
+    if (target.hasOwnProperty(colName)) {
+      if(tracing) console.log("Found field " + colName);
+      target[colName] = source[field];
     }
   }
+  if(tracing) console.log("copyFields target", target);
 }
 
 router.post('/settings', function(req,res) {
   let updateProm = getCurrBatchSettings();
 
   updateProm.then(updateJson => {
-    let update = JSON.parse(updateJson);
-    // console.log("update=", update);
+    let tracing = false;
+
+    var update = updateJson;
+    if(tracing) console.log("update=", update);
     let postData = req.body;
+    if(tracing) console.log("postData=", postData);
     copyFields(update, postData);
-    // console.log("updatePostCopy=", update);
+    if(tracing) console.log("updatePostCopy=", update);
     update.TrimIndicated = 0;
     settingsPromise = db.conn.queryPromise("INSERT INTO BATCH_PROP_SETTINGS " +
-                      "SET TrimIndicated = ?, MultiHood = ?, IncludeVU = ?, IncludeMLS = ?, NumPrevYears = ?",
+                      "SET TrimIndicated = ?, MultiHood = ?, IncludeVU = ?, IncludeMLS = ?, NumPrevYears = ?, " +
+                      "SqftRangePct = ?, SqftRangeMin = ?, SqftRangeMax = ?," +
+                      "ClassRange = ?, ClassRangeEnabled = ?," +
+                      "SaleRatioEnabled = ?, SaleRatioMin = ?, SaleRatioMax = ?, " +
+                      "PercentGood = ?, PercentGoodEnabled = ?, PercentGoodMin = ?, PercentGoodMax = ?, " +
+                      "NetAdj = ?, NetAdjEnabled = ?, ImpLimit = ?, "+
+                      "LimitTcadScores = ?, LimitTcadScoresAmount = ?, TcadScoreLimitMin = ?, TcadScoreLimitMax = ?, "+
+                      "LimitToCurrentYearLowered = ?, GrossAdjFilterEnabled = ?, " +
+                      "ShowTcadScores = ?, ShowSaleRatios = ?",
                       [
-                        update.TrimIndicated,
-                        update['MultiHood'],
-                        update['IncludeVU'],
-                        update['IncludeMLS'],
-                        update['NumPrevYears']
+                        update.TrimIndicated, update['MultiHood'], update['IncludeVU'], update['IncludeMLS'], update['NumPrevYears'],
+                        update.SqftRangePct, update.SqftRangeMin, update.SqftRangeMax,
+                        update.ClassRange, update.ClassRangeEnabled,
+                        update.SaleRatioEnabled, update.SaleRatioMin, update.SaleRatioMax,
+                        update.PercentGood, update.PercentGoodEnabled, update.PercentGoodMin, update.PercentGoodMax,
+                        update.NetAdj, update.NetAdjEnabled, update.ImpLimit,
+                        update.LimitTcadScores,  update.LimitTcadScoresAmount, update.TcadScoreLimitMin, update.TcadScoreLimitMax,
+                        update.LimitToCurrentYearLowered, update.GrossAdjFilterEnabled,
+                        update.ShowTcadScores, update.ShowSaleRatios
                       ]
                       );
     settingsPromise.then(qResults => {
-      console.log(qResults);
-      res.json(qResults[0]);
+      console.log("settingsPromise", qResults);
+      res.json(qResults);
     }).catch(error => {
       console.log(error);
     });
