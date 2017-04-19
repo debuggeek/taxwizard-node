@@ -61,7 +61,7 @@ function getCurrBatchSettings(){
                                                           "IncludeVU,"+
                                                           "IncludeMLS,"+
                                                           "NumPrevYears,"+
-                                                          "SqftRangePct,SqftRangeMin,SqftRangeMax,"+
+                                                          "SqftRangePctEnabled, SqftRangePct,SqftRangeMin,SqftRangeMax,"+
                                                           "ClassRange,ClassRangeEnabled,"+
                                                           "SaleRatioEnabled,SaleRatioMin,SaleRatioMax,"+
                                                           "PercentGood,PercentGoodEnabled,PercentGoodMin,PercentGoodMax,"+
@@ -99,8 +99,15 @@ router.get('/settings', function(req, res) {
 
 function getColName(string){
   let colMap = {'onlyLowerComps':'TrimIndicated','multiHood':'MultiHood,','includeVU':'IncludeVU', 'mlsMultiYear':'NumPrevYears',
-  'sqftRangePct':'SqftRangePct',
-  'showTcadScores':'ShowTcadScores'};
+      'useSqftRangePct':'SqftRangePctEnabled','sqftRangePct':'SqftRangePct','sqftRangeMin':'SqftRangeMin','sqftRangeMax':'SqftRangeMax',
+      'subClassRange':'ClassRange', 'subClassRangeEnabled':'ClassRangeEnabled',
+      'ratiosEnabled':'SaleRatioEnabled','saleRatioMin':'SaleRatioMin','saleRatioMax':'SaleRatioMax',
+      'pctGoodRange':'PercentGood','pctGoodRangeEnabled':'PercentGoodEnabled','pctGoodMin':'PercentGoodMin','pctGoodMax':'PercentGoodMax',
+      'netAdjustAmt':'NetAdj','netAdjEnabled':'NetAdjEnabled',
+      'limitImps':'ImpLimit',
+      'tcadScoreLimitEnabled':'LimitTcadScores','tcadScoreLimitPct':'LimitTcadScoresAmount','tcadScoreLimitMin':'TcadScoreLimitMin','tcadScoreLimitMax':'TcadScoreLimitMax',
+      'onlyCurrYearLowered':'LimitToCurrentYearLowered', 'grossAdjEnabled':'GrossAdjFilterEnabled',
+      'showTcadScores':'ShowTcadScores'};
 
   if(colMap.hasOwnProperty(string)){
     return colMap[string];
@@ -138,7 +145,7 @@ router.post('/settings', function(req,res) {
     update.TrimIndicated = 0;
     settingsPromise = db.conn.queryPromise("INSERT INTO BATCH_PROP_SETTINGS " +
                       "SET TrimIndicated = ?, MultiHood = ?, IncludeVU = ?, IncludeMLS = ?, NumPrevYears = ?, " +
-                      "SqftRangePct = ?, SqftRangeMin = ?, SqftRangeMax = ?," +
+                      "SqftRangePctEnabled = ?, SqftRangePct = ?, SqftRangeMin = ?, SqftRangeMax = ?," +
                       "ClassRange = ?, ClassRangeEnabled = ?," +
                       "SaleRatioEnabled = ?, SaleRatioMin = ?, SaleRatioMax = ?, " +
                       "PercentGood = ?, PercentGoodEnabled = ?, PercentGoodMin = ?, PercentGoodMax = ?, " +
@@ -148,7 +155,7 @@ router.post('/settings', function(req,res) {
                       "ShowTcadScores = ?, ShowSaleRatios = ?",
                       [
                         update.TrimIndicated, update['MultiHood'], update['IncludeVU'], update['IncludeMLS'], update['NumPrevYears'],
-                        update.SqftRangePct, update.SqftRangeMin, update.SqftRangeMax,
+                        update.SqftRangePctEnabled, update.SqftRangePct, update.SqftRangeMin, update.SqftRangeMax,
                         update.ClassRange, update.ClassRangeEnabled,
                         update.SaleRatioEnabled, update.SaleRatioMin, update.SaleRatioMax,
                         update.PercentGood, update.PercentGoodEnabled, update.PercentGoodMin, update.PercentGoodMax,
