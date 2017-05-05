@@ -5,6 +5,7 @@ var cors = require('cors')
 
 var db = require('../lib/db.js');
 
+var BATCHPROP = "tcad_general.BATCH_PROP";
 
 router.get('/', cors(), function(req, res, next) {
   res.type('json');
@@ -25,7 +26,7 @@ router.get('/', cors(), function(req, res, next) {
 });
 
 router.get('/total', function(req, res, next) {
-  db.connection.query("SELECT COUNT(1) FROM `BATCH_PROP`")
+  db.connection.query("SELECT COUNT(1) FROM `${BATCHPROP}`")
             .on('result', function (row) {
               res.json(row['COUNT(1)']);
             })
