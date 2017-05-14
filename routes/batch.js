@@ -5,8 +5,6 @@ var cors = require('cors')
 
 var db = require('../lib/db.js');
 
-var BATCHPROP = "tcad_general.BATCH_PROP";
-
 router.get('/', cors(), function(req, res, next) {
   res.type('json');
   res.send({
@@ -21,38 +19,9 @@ router.get('/', cors(), function(req, res, next) {
         "totalComps":20,
         "pdf":"tbd"
       }
-    ]
+    ],
+    "FAKEDATA" : true
     });
-});
-
-router.get('/total', function(req, res, next) {
-  db.connection.query("SELECT COUNT(1) FROM `${BATCHPROP}`")
-            .on('result', function (row) {
-              res.json(row['COUNT(1)']);
-            })
-            .on('error', function (err) {
-              callback({error: true, err: err});
-            });
-});
-
-router.get('/unprocessed', function(req, res, next) {
-  db.connection.query("SELECT COUNT(1) FROM `BATCH_PROP` WHERE completed = false")
-            .on('result', function (row) {
-              res.json(row['COUNT(1)']);
-            })
-            .on('error', function (err) {
-              callback({error: true, err: err});
-            });
-});
-
-router.get('/processed', function(req, res, next) {
-  db.connection.query("SELECT COUNT(1) FROM `BATCH_PROP` WHERE completed = true")
-            .on('result', function (row) {
-              res.json(row['COUNT(1)']);
-            })
-            .on('error', function (err) {
-              callback({error: true, err: err});
-            });
 });
 
 function getCurrBatchSettings(){
@@ -131,6 +100,19 @@ function copyFields(target, source) {
   if(tracing) console.log("copyFields target", target);
 }
 
+router.post('/single', function(req,res) {
+  let postData = req.body;
+  console.log("postData=", postData);
+  insertProm = db.conn.queryPromise("INSERT INTO `BATCH_PROP` SET prop = ?, completed = 'false'", [postData.prop])
+  insertProm.then(qResults => {
+    console.log("insertProm", qResults);
+    res.json(qResults);
+  }).catch(error => {
+    console.log(error);
+    res.json(error);
+  });
+});
+
 router.post('/settings', function(req,res) {
   let updateProm = getCurrBatchSettings();
 
@@ -177,9 +159,9 @@ router.post('/settings', function(req,res) {
 
 router.get('/summary', function(req, res) {
   let result = {"processed" : null, "unprocessed" : null, "total" : null};
-  completedPromise = db.conn.queryPromise("SELECT COUNT(1) FROM `BATCH_PROP` WHERE completed = 'true'");
-  uncomplePromise = db.conn.queryPromise("SELECT COUNT(1) FROM `BATCH_PROP` WHERE completed = 'false'");
-  totalPromise = db.conn.queryPromise("SELECT COUNT(1) FROM `BATCH_PROP`");
+  completedPromise = db.conn.queryPromise("SELECT COUNT(1) FROM BATCH_PROP WHERE completed = 'true'");
+  uncomplePromise = db.conn.queryPromise("SELECT COUNT(1) FROM BATCH_PROP WHERE completed = 'false'");
+  totalPromise = db.conn.queryPromise("SELECT COUNT(1) FROM BATCH_PROP");
   completedPromise.then(qResults => {
     let count = qResults[0]['COUNT(1)'];
     result.processed = count;
