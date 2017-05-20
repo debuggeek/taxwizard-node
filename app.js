@@ -9,6 +9,7 @@ var cors = require('cors')
 var routes = require('./routes/index');
 var salesComp = require('./routes/salesComp');
 var batch = require('./routes/batch');
+var wcad = require('./routes/wcad');
 
 var app = express();
 
@@ -27,6 +28,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use('/', routes);
 app.use('/salesComp', cors(), salesComp);
 app.use('/batch', cors(), batch);
+app.use('/wcad', cors(), wcad);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {

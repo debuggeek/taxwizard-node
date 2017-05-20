@@ -5,7 +5,7 @@
   "scripts": {
     "start": "if-env NODE_ENV=prod && npm run start:prod || npm run start:dev",
     "start:prod": "node ./bin/www",
-    "start:dev": "supervisor ./bin/www"
+    "start:dev": "supervisor --inspect ./bin/www"
   },
   "dependencies": {
     "body-parser": "^1.16.1",
@@ -15,6 +15,8 @@
     "hbs": "^4.0.1",
     "morgan": "^1.8.1",
     "mysql": "^2.5.4",
+    "mysql2": "^1.2.0",
+    "sequelize": "^3.30.4",
     "serve-favicon": "^2.4.1"
   },
   "devDependencies": {
