@@ -1,4 +1,4 @@
-var Sequelize = require('Sequelize');
+var Sequelize = require('sequelize');
 var db = require('../lib/db.js');
 
 const Property = db.sequelize.define('property', {
