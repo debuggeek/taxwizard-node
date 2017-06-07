@@ -5,7 +5,8 @@
   "scripts": {
     "start": "if-env NODE_ENV=prod && npm run start:prod || npm run start:dev",
     "start:prod": "node ./bin/www",
-    "start:dev": "supervisor --inspect ./bin/www"
+    "start:dev": "supervisor --inspect ./bin/www",
+    "start:aws": "NODE_ENV=prod && node ./bin/www-aws"
   },
   "dependencies": {
     "body-parser": "^1.16.1",
