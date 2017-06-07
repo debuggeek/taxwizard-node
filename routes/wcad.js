@@ -36,8 +36,13 @@ router.get('/propertyByQuickRefId/:quickRefId', cors(), function(req, res, next)
       //console.log("wcadProp:",wcadProp);
       res.json(wcadProp);
     }).catch(error => {
-      console.log("ERROR:", error);
-      res.status(500).send('Something broke!');
+      if(error.message === "no property found"){
+        console.log("INFO:", error.message);
+        res.status(404).send(error.message);
+      } else {
+        console.log("ERROR:", error);
+        res.status(500).send('Something broke!');
+      }
     });
 })
 
