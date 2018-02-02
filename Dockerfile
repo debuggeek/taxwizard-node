@@ -6,7 +6,16 @@ WORKDIR /usr/src/fs-node
 # Install app dependencies
 # A wildcard is used to ensure both package.json AND package-lock.json are copied
 # where available (npm@5+)
-COPY * ./
+COPY package*.json ./
+COPY bin/ ./bin/
+COPY app.js ./
+COPY lib/ ./lib
+COPY models/ ./models/
+COPY routes/ ./routes/
+COPY public/ ./public/
+copy views/ ./views/
+
+RUN ls -al
 
 RUN nodejs -v
 
@@ -19,6 +28,6 @@ RUN npm install
 # RUN npm install --only=production
 
 
-EXPOSE 3000,9229
+EXPOSE 3000 9229
 
 CMD [ "npm", "start" ]
