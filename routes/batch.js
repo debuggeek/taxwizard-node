@@ -1,12 +1,11 @@
-var express = require('express');
-var router = express.Router();
-var mysql = require('mysql');
-var cors = require('cors')
+const express = require('express');
+const router = express.Router();
+const cors = require('cors');
 
-var db = require('../lib/db.js');
+const db = require('../lib/db.js');
 
 
-router.get('/', cors(), function(req, res, next) {
+router.get('/', cors(), function(req, res) {
   res.type('json');
   res.send({
     "rows" : [
@@ -24,7 +23,7 @@ router.get('/', cors(), function(req, res, next) {
     });
 });
 
-router.get('/total', function(req, res, next) {
+router.get('/total', function(req, res) {
   db.connection.query("SELECT COUNT(1) FROM `BATCH_PROP`")
             .on('result', function (row) {
               res.json(row['COUNT(1)']);
@@ -34,7 +33,7 @@ router.get('/total', function(req, res, next) {
             });
 });
 
-router.get('/unprocessed', function(req, res, next) {
+router.get('/unprocessed', function(req, res) {
   db.connection.query("SELECT COUNT(1) FROM `BATCH_PROP` WHERE completed = false")
             .on('result', function (row) {
               res.json(row['COUNT(1)']);
@@ -44,7 +43,7 @@ router.get('/unprocessed', function(req, res, next) {
             });
 });
 
-router.get('/processed', function(req, res, next) {
+router.get('/processed', function(req, res) {
   db.connection.query("SELECT COUNT(1) FROM `BATCH_PROP` WHERE completed = true")
             .on('result', function (row) {
               res.json(row['COUNT(1)']);
@@ -75,9 +74,8 @@ function getCurrBatchSettings(){
                                                           "WHERE id=(SELECT max(id) FROM BATCH_PROP_SETTINGS)");
 
     settingsPromise.then(qResults => {
-      var results = qResults[0];
-      //console.log("getCurrBatchSettings results=", results);
-      resolve(results);
+        const results = qResults[0];
+        resolve(results);
     }).catch(error => {
       console.log(error);
       reject(error);
@@ -86,7 +84,7 @@ function getCurrBatchSettings(){
 }
 
 router.get('/settings', function(req, res) {
-  settingsPromise = new Promise((resolve,reject) => {
+  const settingsPromise = new Promise((resolve,reject) => {
     resolve(getCurrBatchSettings());
   });
   settingsPromise.then(qResults => {
@@ -119,7 +117,7 @@ function getColName(string){
 
 function copyFields(target, source) {
   let tracing = true;
-  for (var field in source) {
+  for (let field in source) {
     let colName = getColName(field);
     if(tracing) console.log("Looking for " + field + " with colName " + colName);
     if (target.hasOwnProperty(colName)) {
@@ -136,7 +134,7 @@ router.post('/settings', function(req,res) {
   updateProm.then(updateJson => {
     let tracing = false;
 
-    var update = updateJson;
+    const update = updateJson;
     if(tracing) console.log("update=", update);
     let postData = req.body;
     if(tracing) console.log("postData=", postData);
@@ -204,12 +202,10 @@ router.get('/summary', function(req, res) {
 
 });
 
-router.get('/all', function(req, res, next) {
-  var limit=10000;
-  var page=(typeof req.params.page!='undefined')?parseInt(req.params.page):1;
-  var start=(page-1)*limit;
-
-  var findings=[];
+router.get('/all', function(req, res) {
+    const limit=10000;
+    const page=(typeof req.params.page!=='undefined')?parseInt(req.params.page):1;
+    const start=(page-1)*limit;
 
   qPromise = db.conn.queryPromise("SELECT prop,prop_mktval,Median_Sale5,Median_Sale10,Median_Sale15," +
         "Median_Eq11,TotalComps FROM `BATCH_PROP` WHERE completed = 'true' LIMIT ? OFFSET ?", [limit, start]);
@@ -219,6 +215,33 @@ router.get('/all', function(req, res, next) {
   }).catch(error => {
     console.log(error);
   });
+});
+
+router.get('/pdf/:propId', function(req, res) {
+    const propId = (typeof req.params.propId!=='undefined')?parseInt(req.params.propId):null;
+
+    if(propId === null){
+        res.status(400).send('Must provide propId');
+    }
+
+    console.log("Getting PDF for " + propId);
+
+    let qPromise = db.conn.queryPromise("SELECT pdfs FROM BATCH_PROP WHERE prop=?", [propId]);
+    qPromise.then(qResults => {
+        console.log(qResults.length + " results found");
+        //2 step conversion from SQL chars to the base64 encoding that it is
+        let data = Buffer.from(qResults[0]['pdfs']).toString();
+        let d2 = Buffer.from(data,'base64');
+        res.writeHead(200, {
+            'Content-Type': 'application/pdf;base64',
+            'Content-Disposition': 'attachment; filename='+propId+'.pdf',
+            'Content-Length': d2.length
+        });
+        res.end(d2);
+    }).catch(error => {
+        console.log(error);
+        res.status(500).send(error);
+    });
 });
 
 module.exports = router;
