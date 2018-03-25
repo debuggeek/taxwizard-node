@@ -69,7 +69,8 @@ function getCurrBatchSettings(){
             "LimitTcadScores,LimitTcadScoresAmount,TcadScoreLimitMin,TcadScoreLimitMax,"+
             "LimitToCurrentYearLowered,"+
             "GrossAdjFilterEnabled,"+
-            "ShowTcadScores,ShowSaleRatios "+
+            "ShowTcadScores,ShowSaleRatios,"+
+            "rankByIndicated " +
             "FROM BATCH_PROP_SETTINGS "+
             "WHERE id=(SELECT max(id) FROM BATCH_PROP_SETTINGS)");
 
@@ -105,7 +106,8 @@ function getColName(string){
         'limitImps':'ImpLimit',
         'tcadScoreLimitEnabled':'LimitTcadScores','tcadScoreLimitPct':'LimitTcadScoresAmount','tcadScoreLimitMin':'TcadScoreLimitMin','tcadScoreLimitMax':'TcadScoreLimitMax',
         'onlyCurrYearLowered':'LimitToCurrentYearLowered', 'grossAdjEnabled':'GrossAdjFilterEnabled',
-        'showTcadScores':'ShowTcadScores'};
+        'showTcadScores':'ShowTcadScores',
+        'rankByIndicated':'rankByIndicated'};
 
     if(colMap.hasOwnProperty(string)){
         return colMap[string];
