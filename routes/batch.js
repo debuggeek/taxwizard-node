@@ -5,7 +5,6 @@ const cors = require('cors');
 const db = require('../lib/db.js');
 const JSZip = require("jszip");
 
-
 router.get('/', cors(), function(req, res) {
     res.type('json');
     res.send({
@@ -293,7 +292,7 @@ router.get('/pdf', function(req, res) {
 router.get('/pdfs', function(req, res) {
     console.log("Getting PDF for all properties");
 
-    let qPromise = db.conn.queryPromise("SELECT prop, pdfs FROM BATCH_PROP LIMIT 3");
+    let qPromise = db.conn.queryPromise("SELECT prop, pdfs FROM BATCH_PROP");
     qPromise.then(qResults => {
         console.log(qResults.length + " results found");
         if(qResults.length === 0){
@@ -305,12 +304,23 @@ router.get('/pdfs', function(req, res) {
         qResults.forEach(row => {
             console.log("processing " + row['prop']);
             let propId = row['prop'];
-            zip.file(propId + ".pdf",row['pdfs'], {base64: true});
+            if(row['pdfs'] != null) {
+                let data = Buffer.from(row['pdfs']).toString();
+                let d2 = Buffer.from(data, 'base64');
+                zip.file(propId + ".pdf", d2, {base64: true});
+            } else {
+                console.log("No pdf found for" + propId);
+            }
         });
         zip.generateAsync({type:"base64"})
             .then(function(content) {
-                // see FileSaver.js
-                saveAs(content, "propIds.zip");
+                let d2 = Buffer.from(content,'base64');
+                res.writeHead(200, {
+                    'Content-Type': 'application/zip;base64',
+                    'Content-Disposition': 'attachment; filename=props.zip',
+                    'Content-Length': d2.length
+                });
+                res.end(d2);
             }, function (e) {
                 showError(e);
             });
