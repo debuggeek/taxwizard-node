@@ -253,6 +253,34 @@ router.get('/all/:format', function(req, res) {
 });
 
 /**
+ * Used to reset a single batch item by propId
+ */
+router.get('/reset', function(req, res) {
+    const propId = (typeof req.query.subj !== 'undefined') ? parseInt(req.query.subj) : null;
+
+    if (propId === null) {
+        res.status(400).send('Must provide propId');
+    }
+
+    console.log("Resetting state for " + propId);
+
+    let qPromise = db.conn.queryPromise("UPDATE BATCH_PROP SET completed = 'false' WHERE prop =?", [propId]);
+    qPromise.then(qResults => {
+        console.log(qResults.affectedRows + " rows affected");
+        if(qResults.length === 0){
+            res.status(404);
+            res.end();
+        } else {
+            res.status(200);
+            res.end();
+        }
+    }).catch(error => {
+        console.log(error);
+        res.status(500).send(error);
+    });
+});
+
+/**
  * Used to retrieve a single pdf by propId
  */
 router.get('/pdf', function(req, res) {
