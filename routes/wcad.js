@@ -47,6 +47,66 @@ router.get('/propertyByQuickRefId/:quickRefId', cors(), function(req, res, next)
     });
 })
 
+router.post('/comps/:quickRefId', cors(), function(req, res, next){
+    const quickRefId = req.params['quickRefId'];
+    const sqftRangePct = req.query['sqftRangePct'];
+    const salesComp = req.query['sales'];
+    const useSales = salesComp ? salesComp : false;
+    let percAbove = 0;
+    let percBelow = 0;
+
+    if(req.body.useSqftRangePct){
+      const sqftRangePct = req.body.sqftRangePct;
+      const percAboveBelow = sqftRangePct ? sqftRangePct : 10;
+       percAbove = 1 + (percAboveBelow / 100);
+       percBelow = 1 - (percAboveBelow / 100);
+    } else {
+       percAbove = req.body.sqftRangeMax;
+       percBelow = req.body.sqftRangMin;
+    }
+
+    console.log(`Finding comps for quickRefId=${quickRefId} at percAbove=${percAbove} percBelow=${percBelow} salesComp=${useSales}`);
+
+    let result = {"subject" : "","comps":[]};
+
+    let context = {"percAbove":percAbove,"percBelow":percBelow};
+
+    wcadPropDao.getPropertyByQuickRefId(quickRefId)
+        .then(wcadProp => {
+            result.subject = wcadProp.summary;
+            return wcadPropDao.getCompsFor(context, quickRefId)
+                .then( compList => {
+                    let simpleList = [];
+                    for(x in compList){
+                        simpleList.push(compList[x].quickRefId);
+                    }
+                    console.log("simpleList:", simpleList);
+                    wcadPropDao.getHydratedProps(simpleList)
+                        .then( hydratedComps => {
+                            let compSummaries = [];
+                            for(x in hydratedComps){
+                                compSummaries.push(hydratedComps[x].summary);
+                            }
+                            result.comps = compSummaries;
+                            result = wcadFunc.calcDiffsForSales(result);
+                            result = wcadFunc.calcIndicatedValue(result);
+                            result = wcadFunc.sortComps(result, useSales);
+                            res.json(result);
+                        }).catch(error => {
+                        console.log("HydrateError:", error);
+                    })
+                });
+        }).catch(error => {
+        if(error.message === "no property found"){
+            console.log("INFO:", error.message);
+            res.status(404).send(error.message);
+        } else {
+            console.log("ERROR:", error);
+            res.status(500).send('Something broke!');
+        }
+    });
+})
+
 router.get('/comps/:quickRefId', cors(), function(req, res, next){
   const quickRefId = req.params['quickRefId'];
   const sqftRangePct = req.query['sqftRangePct'];
@@ -68,11 +128,11 @@ router.get('/comps/:quickRefId', cors(), function(req, res, next){
       result.subject = wcadProp.summary;
       return wcadPropDao.getCompsFor(context, quickRefId)
         .then( compList => {
-          var simpleList = [];
+          let simpleList = [];
           for(x in compList){
             simpleList.push(compList[x].quickRefId);
           }
-          // console.log("simpleList:", simpleList);
+          console.log("simpleList:", simpleList);
           wcadPropDao.getHydratedProps(simpleList)
             .then( hydratedComps => {
               let compSummaries = [];

@@ -1,5 +1,5 @@
-var Sequelize = require('sequelize');
-var db = require('../lib/db.js');
+let Sequelize = require('sequelize');
+let db = require('../lib/db.js');
 
 const Property = db.sequelize.define('property', {
     PropertyId : {
@@ -11,7 +11,7 @@ const Property = db.sequelize.define('property', {
     SitusAddress : Sequelize.STRING,
     PropertyAddress : Sequelize.STRING,
     NeighborhoodCode : Sequelize.STRING,
-    // Acres: Sequelize.INTEGER,
+    //Acres: Sequelize.INTEGER,
     TotalSqFtLivingArea : Sequelize.INTEGER,
     // LivingAreaValue : Sequelize.INTEGER,
     //Improvement Value

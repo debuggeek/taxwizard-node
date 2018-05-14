@@ -1,7 +1,7 @@
 var Sequelize = require('sequelize');
 var db = require('../../lib/db.js');
 
-const Land = db.sequelize.define('land', {
+const Land = db.sequelize.define('tsgland', {
     PropertyId : {
       type: Sequelize.INTEGER,
       primaryKey: true

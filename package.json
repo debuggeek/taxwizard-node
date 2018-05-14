@@ -6,7 +6,8 @@
     "start": "if-env NODE_ENV=prod && npm run start:prod || if-env NODE_ENV=aws && npm run start:aws || npm run start:dev",
     "start:prod": "node ./bin/www",
     "start:dev": "supervisor --inspect ./bin/www",
-    "start:aws": "NODE_ENV=prod && node ./bin/www-aws"
+    "start:aws": "NODE_ENV=prod && node ./bin/www-aws",
+    "start:local": "node $NODE_DEBUG_OPTION ./bin/www"
   },
   "dependencies": {
     "body-parser": "^1.16.1",
