@@ -216,7 +216,10 @@ router.get('/all/:format*?', function(req, res, next) {
     const page=(typeof req.params.page!=='undefined')?parseInt(req.params.page):1;
     const start=(page-1)*limit;
 
-    qPromise = db.conn.queryPromise("SELECT prop,prop_mktval,Median_Sale5,Median_Sale10,Median_Sale15," +
+    qPromise = db.conn.queryPromise("SELECT prop,prop_mktval,"+
+        "Median_Sale5,Low_Sale5,High_Sale5,"+
+        "Low_Sale10,Median_Sale10,High_Sale10," + 
+        "Median_Sale15,Low_Sale15,High_Sale15," +
         "Median_Eq11,TotalComps FROM `BATCH_PROP` WHERE completed = 'true' LIMIT ? OFFSET ?", [limit, start]);
     qPromise.then(qResults => {
         console.log(qResults.length + " entries in BATCH_PROP");
