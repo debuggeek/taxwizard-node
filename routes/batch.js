@@ -70,7 +70,8 @@ function getCurrBatchSettings(){
             "LimitToCurrentYearLowered,"+
             "GrossAdjFilterEnabled,"+
             "ShowTcadScores,ShowSaleRatios,"+
-            "rankByIndicated " +
+            "rankByIndicated, " +
+            "SaleTypeQ " +
             "FROM BATCH_PROP_SETTINGS "+
             "WHERE id=(SELECT max(id) FROM BATCH_PROP_SETTINGS)");
 
@@ -107,7 +108,8 @@ function getColName(string){
         'tcadScoreLimitEnabled':'LimitTcadScores','tcadScoreLimitPct':'LimitTcadScoresAmount','tcadScoreLimitMin':'TcadScoreLimitMin','tcadScoreLimitMax':'TcadScoreLimitMax',
         'onlyCurrYearLowered':'LimitToCurrentYearLowered', 'grossAdjEnabled':'GrossAdjFilterEnabled',
         'showTcadScores':'ShowTcadScores',
-        'rankByIndicated':'rankByIndicated'};
+        'rankByIndicated':'rankByIndicated',
+        'saleTypeQ':'SaleTypeQ'};
 
     if(colMap.hasOwnProperty(string)){
         return colMap[string];
@@ -121,8 +123,9 @@ function copyFields(target, source) {
     let tracing = true;
     for (let field in source) {
         // noinspection JSUnfilteredForInLoop
+        if(tracing) console.log("Looking for " + field);
         let colName = getColName(field);
-        if(tracing) console.log("Looking for " + field + " with colName " + colName);
+        if(tracing) console.log(field + " mapped to colName=" + colName);
         if (target.hasOwnProperty(colName)) {
             if(tracing) console.log("Found field " + colName);
             // noinspection JSUnfilteredForInLoop
@@ -155,7 +158,7 @@ router.post('/settings', function(req,res) {
             "NetAdj = ?, NetAdjEnabled = ?, ImpLimit = ?, "+
             "LimitTcadScores = ?, LimitTcadScoresAmount = ?, TcadScoreLimitMin = ?, TcadScoreLimitMax = ?, "+
             "LimitToCurrentYearLowered = ?, GrossAdjFilterEnabled = ?, " +
-            "ShowTcadScores = ?, ShowSaleRatios = ?",
+            "ShowTcadScores = ?, ShowSaleRatios = ?, SaleTypeQ = ?",
             [
                 update['TrimIndicated'], update['MultiHood'], update['IncludeVU'], update['IncludeMLS'], update['NumPrevYears'],
                 update['SqftRangePctEnabled'], update['SqftRangePct'], update['SqftRangeMin'], update['SqftRangeMax'],
@@ -165,7 +168,7 @@ router.post('/settings', function(req,res) {
                 update['NetAdj'], update['NetAdjEnabled'], update['ImpLimit'],
                 update['LimitTcadScores'],  update['LimitTcadScoresAmount'], update['TcadScoreLimitMin'], update['TcadScoreLimitMax'],
                 update['LimitToCurrentYearLowered'], update['GrossAdjFilterEnabled'],
-                update['ShowTcadScores'], update['ShowSaleRatios']
+                update['ShowTcadScores'], update['ShowSaleRatios'], update['SaleTypeQ']
             ]
         );
         settingsPromise.then(qResults => {
@@ -226,7 +229,7 @@ router.get('/all/:format*?', function(req, res, next) {
         if(req.params.format === 'csv') {
             req.retrievedData = qResults;
             next('route')
-        } else {
+        } else {~
             res.json(qResults);
         }
     }).catch(error => {
