@@ -5,6 +5,11 @@ const cors = require('cors');
 const db = require('../lib/db.js');
 const JSZip = require("jszip");
 
+const batchOps = require('../lib/batchOps');
+
+/*
+Not really used except for testing
+*/
 router.get('/', cors(), function(req, res) {
     res.type('json');
     res.send({
@@ -259,6 +264,40 @@ router.get('/all/:format', function(req, res) {
 });
 
 /**
+ * Used to reset a single pdf by propId
+ */
+router.post('/reset', async function(req, res) {
+    const propId = (typeof req.query.prop!=='undefined')?parseInt(req.query.prop):null;
+    const all = (typeof req.query.all!=='undefined')?req.query.all:null;
+
+    if(all === null && propId === null){
+        res.status(400).send('Must provide propId');
+    }
+    let result = null;
+
+    if(all){
+        console.log("Resetting all properties");
+        result = await batchOps.resetAllBatchProp();
+    } else {
+        // We have a single prop Id
+        console.log("Resetting state for " + propId);
+        result = await batchOps.resetBatchProp(propId);
+    }
+    console.log("Result was " + JSON.stringify(result));
+
+    if(result.success === true){
+        res.status(200);
+        res.json(result);
+    } else if(result.notFound === true){
+        res.status(404);
+        res.json(result);
+    } else {
+        res.status(500);
+    }
+    res.end();
+});
+
+/**
  * Used to retrieve a single pdf by propId
  */
 router.get('/pdf', function(req, res) {
@@ -295,7 +334,7 @@ router.get('/pdf', function(req, res) {
 });
 
 /**
- * Used to retrieve a single pdf by propId
+ * Used to retrieve all pdfs and zip up
  */
 router.get('/pdfs', function(req, res) {
     console.log("Getting PDF for all properties");
