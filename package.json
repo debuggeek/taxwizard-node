@@ -3,9 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "start": "if-env NODE_ENV=prod && npm run start:prod || if-env NODE_ENV=aws && npm run start:aws || npm run start:dev",
+    "start": "if-env NODE_ENV=prod && npm run start:prod || if-env NODE_ENV=aws && npm run start:aws || if-env NODE_ENV=stage && npm run start:aws-stage || npm run start:dev",
     "start:prod": "node ./bin/www",
     "start:dev": "supervisor ./bin/www",
+    "start:aws-stage": "NODE_ENV=stage && node ./bin/www-aws",
     "start:aws": "NODE_ENV=prod && node ./bin/www-aws",
     "start:local": "node $NODE_DEBUG_OPTION ./bin/www"
   },
