@@ -9,6 +9,7 @@ const routes = require('./routes/index');
 const salesComp = require('./routes/salesComp');
 const batch = require('./routes/batch');
 const wcad = require('./routes/wcad');
+const admin = require('./routes/admin');
 
 const app = express();
 
@@ -28,6 +29,7 @@ app.use('/', routes);
 app.use('/salesComp', cors(), salesComp);
 app.use('/batch', cors(), batch);
 app.use('/wcad', cors(), wcad);
+app.use('/admin', cors(), admin);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
