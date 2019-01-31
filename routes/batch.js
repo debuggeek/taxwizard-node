@@ -266,7 +266,7 @@ router.get('/all/:format', function(req, res) {
 });
 
 /**
- * Used to reset a single pdf by propId
+ * Used to reset a single/all pdf by propId
  */
 router.post('/reset', async function(req, res) {
     const propId = (typeof req.query.prop!=='undefined')?parseInt(req.query.prop):null;
@@ -293,6 +293,24 @@ router.post('/reset', async function(req, res) {
     } else if(result.notFound === true){
         res.status(404);
         res.json(result);
+    } else {
+        res.status(500);
+    }
+    res.end();
+});
+
+/**
+ * Used to purge all pdf by propId
+ */
+router.post('/purge', async function(req, res) {
+
+    console.log("Purging all properties");
+    result = await batchOps.purgeAllBatch();
+    console.log("Result was " + JSON.stringify(result));
+
+    if(result === true){
+        res.status(200);
+        res.json("OK");
     } else {
         res.status(500);
     }
