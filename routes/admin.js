@@ -1,4 +1,8 @@
-var mysql = require('mysql');
+/*jslint vars: true, plusplus: true, devel: true, nomen: true, indent: 4, maxerr: 50 */ 
+/*global define */
+
+"use strict";
+const mysql = require('mysql');
 const express = require("express");
 const router = express.Router();
 
@@ -13,7 +17,17 @@ var con = mysql.createConnection({
     debug    : true
 });
 
-router.get("/verify", function(req, res) {
+router.get("/config", function (req, res) {
+    let dbconfig = {
+        host: cfg.host,
+        database: cfg.database
+    };
+    console.log("config: " + JSON.stringify(dbconfig));
+    res.json(dbconfig);
+    res.end();
+});
+
+router.get("/verify", function (req, res) {
     console.log("Executing verification");
     // db.connection.query("SELECT COUNT(1) FROM `BATCH_PROP`")
     //     .on('result', function (row) {
