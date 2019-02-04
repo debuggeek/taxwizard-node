@@ -219,29 +219,31 @@ router.get('/summary', function(req, res) {
 /**
  * Returns all the summary batch propertys calculated
  */
-router.get('/all/:format*?', function(req, res, next) {
+router.get('/all/:format*?', async function(req, res, next) {
     const limit=10000;
     const page=(typeof req.params.page!=='undefined')?parseInt(req.params.page):1;
     const start=(page-1)*limit;
 
-    qPromise = db.conn.queryPromise("SELECT prop,prop_mktval,"+
-        "Median_Sale5,Low_Sale5,High_Sale5," +
-        "Low_Sale10,Median_Sale10,High_Sale10," +
-        "Median_Sale15,Low_Sale15,High_Sale15," +
-        "Median_Eq11,TotalComps FROM `BATCH_PROP` WHERE completed = 'true' LIMIT ? OFFSET ?", [limit, start]);
-    qPromise.then(qResults => {
-        console.log(qResults.length + " entries in BATCH_PROP");
-        if(req.params.format === 'csv') {
-            req.retrievedData = qResults;
-            next('route')
-        } else {~
-            res.json(qResults);
+    try {
+        let result = null;
+        if(req.query.version === 'old'){
+            result = await batchOps.getBatchProps_2018(limit, start);
+        } else {
+            result = await batchOps.getBatchProps_2019(limit, start);
         }
-    }).catch(error => {
+        console.log(result.length + " entries in BATCH_PROP");
+        if(req.params.format === 'csv') {
+            req.retrievedData = result;
+            next('route')
+        } else {
+            res.json(result);
+        }
+    } catch(error) {
         console.log(error);
         res.status(500);
+    } finally {
         res.send();
-    });
+    }
 });
 
 router.get('/all/:format', function(req, res) {
