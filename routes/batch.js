@@ -144,7 +144,7 @@ router.post('/settings', function(req,res) {
     let updateProm = getCurrBatchSettings();
 
     updateProm.then(updateJson => {
-        let tracing = false;
+        let tracing = true;
 
         const update = updateJson;
         if(tracing) console.log("update=", update);
@@ -163,7 +163,7 @@ router.post('/settings', function(req,res) {
             "NetAdj = ?, NetAdjEnabled = ?, ImpLimit = ?, "+
             "LimitTcadScores = ?, LimitTcadScoresAmount = ?, TcadScoreLimitMin = ?, TcadScoreLimitMax = ?, "+
             "LimitToCurrentYearLowered = ?, GrossAdjFilterEnabled = ?, " +
-            "ShowTcadScores = ?, ShowSaleRatios = ?, SaleTypeQ = ?",
+            "ShowTcadScores = ?, ShowSaleRatios = ?, rankByIndicated = ?, SaleTypeQ = ?",
             [
                 update['TrimIndicated'], update['MultiHood'], update['IncludeVU'], update['IncludeMLS'], update['NumPrevYears'],
                 update['SqftRangePctEnabled'], update['SqftRangePct'], update['SqftRangeMin'], update['SqftRangeMax'],
@@ -173,7 +173,7 @@ router.post('/settings', function(req,res) {
                 update['NetAdj'], update['NetAdjEnabled'], update['ImpLimit'],
                 update['LimitTcadScores'],  update['LimitTcadScoresAmount'], update['TcadScoreLimitMin'], update['TcadScoreLimitMax'],
                 update['LimitToCurrentYearLowered'], update['GrossAdjFilterEnabled'],
-                update['ShowTcadScores'], update['ShowSaleRatios'], update['SaleTypeQ']
+                update['ShowTcadScores'], update['ShowSaleRatios'], update['rankByIndicated'], update['SaleTypeQ']
             ]
         );
         settingsPromise.then(qResults => {
