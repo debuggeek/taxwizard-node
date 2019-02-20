@@ -8,7 +8,7 @@ var fs = require('fs');
 var app = require('../app');
 var debug = require('debug')('fivestone_node:server');
 
-const config = require("../lib/config").Config;;
+const config = require("../lib/config").Config;
 
 /**
 *var http = require('http');

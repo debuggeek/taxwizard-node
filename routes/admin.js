@@ -29,7 +29,7 @@ router.get("/config", function (req, res) {
 
 router.get("/verify", function (req, res) {
     console.log("Executing verification");
-    // db.connection.query("SELECT COUNT(1) FROM `BATCH_PROP`")
+    // db.connection.query("SELECT COUNT(1) FROM `"+cfg.batchPropTable+"`")
     //     .on('result', function (row) {
     //         console.log("Connected");
     //         res.json("Connected to db");
