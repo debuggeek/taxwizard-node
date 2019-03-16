@@ -1,5 +1,5 @@
 {
-  "name": "fivestone_node",
+  "name": "taxwizard_node",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -24,6 +24,7 @@
     "serve-favicon": "^2.5.0"
   },
   "devDependencies": {
-    "if-env": "^1.0.4"
+    "if-env": "^1.0.4",
+    "supervisor": "^0.12.0"
   }
 }
