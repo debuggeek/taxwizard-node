@@ -10,6 +10,8 @@ var Land = require("../models/wcad/tsgland.js");
 var wcadPropDao = require("../lib/wcadPropDao");
 var wcadFunc = require("../lib/wcadFunctions");
 
+const findComps = require("../lib/wcadBizOps").findComps;
+
 router.get("/", cors(), function(req, res, next) {
   res.type("json");
   res.send("OK");
@@ -47,6 +49,8 @@ router.get("/propertyByQuickRefId/:quickRefId", cors(), function(req, res, next)
     });
 })
 
+
+
 router.post("/comps", cors(), async function(req, res, next){
   const quickRefId = req.body.quickRefId;
   const sqftRangePct = req.body.sqftRangePct;
@@ -62,33 +66,12 @@ router.post("/comps", cors(), async function(req, res, next){
     percAbove = req.body.sqftRangeMax;
     percBelow = req.body.sqftRangMin;
   }
+
+  let queryParams = {quickRefId, percAbove, percBelow}
+
   console.log(`Finding comps for quickRefId=${quickRefId} at percAbove=${percAbove} percBelow=${percBelow} salesComp=${useSales}`);
 
-  let result = {"subject" : "","comps":[]};
-  let context = {"percAbove":percAbove,"percBelow":percBelow};
-
-  try {
-    const wcadProp = await wcadPropDao.getPropertyByQuickRefId(quickRefId);
-    result.subject = wcadProp.summary;
-    const compList = await wcadPropDao.getCompsFor(context, quickRefId);
-    let simpleList = [];
-    for(x in compList){
-        simpleList.push(compList[x].quickRefId);
-    }
-    console.log("simpleList:", simpleList);
-    const hydratedComps = await wcadPropDao.getHydratedProps(simpleList)
-    let compSummaries = [];
-    for(x in hydratedComps){
-        compSummaries.push(hydratedComps[x].summary);
-    }
-    result.comps = compSummaries;
-    result = wcadFunc.calcDiffsForSales(result);
-    result = wcadFunc.calcIndicatedValue(result);
-    result = wcadFunc.sortComps(result, useSales);
-    res.json(result);
-  } catch(e){
-    res.status(500).send(e);
-  }
+  result = findComps(queryParams);
   res.send(wcadProp);
 })
 
