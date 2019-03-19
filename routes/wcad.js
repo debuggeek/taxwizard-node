@@ -51,10 +51,11 @@ router.get("/propertyByQuickRefId/:quickRefId", cors(), function(req, res, next)
 
 
 
-router.post("/comps", cors(), async function(req, res, next){
-  const quickRefId = req.body.quickRefId;
-  const sqftRangePct = req.body.sqftRangePct;
-  const useSales = req.body.sales;
+router.post("/comps", cors(), async function (req, res, next){
+  const postData = req.body;//JSON.parse(req.body);
+  const quickRefId = postData.quickRefId;
+  const sqftRangePct = postData.sqftRangePct;
+  const useSales = postData.sales ? postData.sales : true; //Default to sales query
 
   let percAbove = 0;
   let percBelow = 0;
@@ -67,12 +68,13 @@ router.post("/comps", cors(), async function(req, res, next){
     percBelow = req.body.sqftRangMin;
   }
 
-  let queryParams = {quickRefId, percAbove, percBelow}
+  let queryParams = {quickRefId, percAbove, percBelow, useSales}
 
   console.log(`Finding comps for quickRefId=${quickRefId} at percAbove=${percAbove} percBelow=${percBelow} salesComp=${useSales}`);
 
-  result = findComps(queryParams);
-  res.send(wcadProp);
+  result = await findComps(queryParams);
+  console.log("FindComps result count:", result.comps.length);
+  res.send(result);
 })
 
 router.get("/comps/:quickRefId", cors(), function(req, res, next){
