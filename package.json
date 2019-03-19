@@ -8,7 +8,8 @@
     "start:dev": "supervisor --inspect ./bin/www",
     "start:aws-stage": "NODE_ENV=stage && node ./bin/www-aws",
     "start:aws": "NODE_ENV=prod && node ./bin/www-aws",
-    "start:local": "node $NODE_DEBUG_OPTION ./bin/www"
+    "start:local": "node $NODE_DEBUG_OPTION ./bin/www",
+    "test": "./node_modules/.bin/mocha --opts ./mocha.opts --recursive ./**/tests/**/*.js --exit"
   },
   "dependencies": {
     "body-parser": "^1.18.3",
@@ -24,7 +25,10 @@
     "serve-favicon": "^2.5.0"
   },
   "devDependencies": {
+    "chai": "^4.2.0",
     "if-env": "^1.0.4",
+    "mocha": "^6.0.2",
+    "sqlite3": "^4.0.6",
     "supervisor": "^0.12.0"
   }
 }

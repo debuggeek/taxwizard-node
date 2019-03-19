@@ -10,6 +10,8 @@ var Land = require("../models/wcad/tsgland.js");
 var wcadPropDao = require("../lib/wcadPropDao");
 var wcadFunc = require("../lib/wcadFunctions");
 
+const findComps = require("../lib/wcadBizOps").findComps;
+
 router.get("/", cors(), function(req, res, next) {
   res.type("json");
   res.send("OK");
@@ -47,7 +49,35 @@ router.get("/propertyByQuickRefId/:quickRefId", cors(), function(req, res, next)
     });
 })
 
-router.post("/comps/:quickRefId", cors(), function(req, res, next){
+
+
+router.post("/comps", cors(), async function (req, res, next){
+  const postData = req.body;//JSON.parse(req.body);
+  const quickRefId = postData.quickRefId;
+  const sqftRangePct = postData.sqftRangePct;
+  const useSales = postData.sales ? postData.sales : true; //Default to sales query
+
+  let percAbove = 0;
+  let percBelow = 0;
+  if(sqftRangePct){
+    const percAboveBelow = sqftRangePct ? sqftRangePct : 10;
+    percAbove = 1 + (percAboveBelow / 100);
+    percBelow = 1 - (percAboveBelow / 100);
+  } else {
+    percAbove = req.body.sqftRangeMax;
+    percBelow = req.body.sqftRangMin;
+  }
+
+  let queryParams = {quickRefId, percAbove, percBelow, useSales}
+
+  console.log(`Finding comps for quickRefId=${quickRefId} at percAbove=${percAbove} percBelow=${percBelow} salesComp=${useSales}`);
+
+  result = await findComps(queryParams);
+  console.log("FindComps result count:", result.comps.length);
+  res.send(result);
+})
+
+router.get("/comps/:quickRefId", cors(), function(req, res, next){
     const quickRefId = req.params["quickRefId"];
     const sqftRangePct = req.query["sqftRangePct"];
     const salesComp = req.query["sales"];
