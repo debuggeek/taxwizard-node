@@ -54,13 +54,13 @@ router.get("/propertyByQuickRefId/:quickRefId", cors(), function(req, res, next)
 router.post("/comps", cors(), async function (req, res, next){
   const postData = req.body;//JSON.parse(req.body);
   const quickRefId = postData.quickRefId;
-  const sqftRangePct = postData.sqftRangePct;
+  const sqftRangePct = postData.sqftRangePct ? postData.sqftRangePct : 10; //Default to 10 pct
   const useSales = postData.sales ? postData.sales : true; //Default to sales query
 
   let percAbove = 0;
   let percBelow = 0;
   if(sqftRangePct){
-    const percAboveBelow = sqftRangePct ? sqftRangePct : 10;
+    const percAboveBelow = sqftRangePct ;
     percAbove = 1 + (percAboveBelow / 100);
     percBelow = 1 - (percAboveBelow / 100);
   } else {
