@@ -3,17 +3,22 @@ const expect = chai.expect;
 const SalesHistory = require("../wcad/salesHistory");
 
 describe("Test Sales History", function() {
-    it.only("Retrieve by Property Id", async () => {
-        const testPropId = "65783";
-        let testSale = await SalesHistory.findOne({ plain: true },{ where: { PropertyId: testPropId } });
+    it("Retrieve by Property Id", async () => {
+        const testPropId = 62710;
+        let result = await SalesHistory.findAndCountAll({ where: { PropertyID: testPropId } });
+        console.log(JSON.stringify(result));
 
-        console.log(testSale);
+        expect(result.count).to.be.greaterThan(0);
+        let testSale = result.rows[0];
+        console.log(JSON.stringify(testSale));
 
         expect(testSale).to.not.be.undefined;
         expect(testSale).to.not.be.null;
-        expect(testSale.PropertyId).to.equal(testPropId);
+        expect(testSale.PropertyID).to.equal(testPropId);
         expect(testSale.SaleDate).to.not.be.undefined;
         expect(testSale.TotalLandValue).to.not.be.undefined;
         expect(testSale.TotalBuildingValue).to.not.be.undefined;
+        expect(testSale.NeighborhoodCode).to.not.be.undefined;
+        expect(testSale.NeighborhoodCode.length).to.be.greaterThan(0);
     });
 });

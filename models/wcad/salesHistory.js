@@ -1,19 +1,29 @@
 var Sequelize = require('sequelize');
-var db = require('../../lib/db.js');
+var sequelize = require('../../lib/db.js').sequelize;
+var Property = require('../property');
 
-const SaleHistory = db.sequelize.define('saleshistory', 
+class SaleHistory extends Sequelize.Model {}
+SaleHistory.init(
     {
-        PropertyID : {
+        PropertyID: {
             type: Sequelize.INTEGER,
             primaryKey: true
         },
-        SaleDate : Sequelize.DATEONLY,
-        TotalLandValue : Sequelize.FLOAT,
-        TotalBuildingValue : Sequelize.FLOAT
-    },
-    {
-        timestamps: false,
-        tableName: 'SalesHistory'
+        SaleDate: Sequelize.DATEONLY,
+        TotalLandValue: Sequelize.FLOAT,
+        TotalBuildingValue: Sequelize.FLOAT,
+        NeighborhoodCode: Sequelize.STRING,
+        SalePrice: {
+            type: Sequelize.VIRTUAL,
+            get(){
+                return this.getDataValue('TotalBuildingValue') + this.getDataValue('TotalLandValue');
+            }
+        }
+    }, 
+    { 
+        timestamps: false, 
+        tableName: 'SalesHistory',
+        sequelize 
     }
 );
 
