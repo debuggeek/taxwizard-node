@@ -56,6 +56,7 @@ router.post("/comps", cors(), async function (req, res, next){
   const quickRefId = postData.quickRefId;
   const sqftRangePct = postData.sqftRangePct ? postData.sqftRangePct : 10; //Default to 10 pct
   const useSales = postData.sales ? postData.sales : true; //Default to sales query
+  const oldestDate = postData.oldestDate ? postData.oldestDate : "2001/09/11";
 
   let percAbove = 0;
   let percBelow = 0;
@@ -68,9 +69,13 @@ router.post("/comps", cors(), async function (req, res, next){
     percBelow = req.body.sqftRangMin;
   }
 
-  let queryParams = {quickRefId, percAbove, percBelow, useSales}
+  let queryParams = {quickRefId, percAbove, percBelow, useSales, oldestDate}
 
-  console.log(`Finding comps for quickRefId=${quickRefId} at percAbove=${percAbove} percBelow=${percBelow} salesComp=${useSales}`);
+  console.log(`Finding comps for quickRefId=${quickRefId} 
+  at percAbove=${percAbove} 
+  percBelow=${percBelow} 
+  salesComp=${useSales} 
+  oldestDate=${oldestDate}`);
 
   result = await findComps(queryParams);
   console.log("FindComps result count:", result.comps.length);
