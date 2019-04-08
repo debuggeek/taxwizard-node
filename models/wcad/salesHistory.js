@@ -22,7 +22,7 @@ SaleHistory.init(
     }, 
     { 
         timestamps: false, 
-        tableName: 'SalesHistory',
+        tableName: 'saleshistory',
         sequelize 
     }
 );
