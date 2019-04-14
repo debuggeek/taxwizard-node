@@ -61,7 +61,7 @@ router.get("/processed", function(req, res) {
         });
 });
 
-router.get("/settings", function(req, res) {
+router.get("/settings", async function(req, res) {
     try {
         let qResults = await batchSettings.getCurrBatchSettings();
         console.log(qResults);
@@ -72,7 +72,7 @@ router.get("/settings", function(req, res) {
     }
 });
 
-router.post("/settings", function(req,res) {
+router.post("/settings", async function(req,res) {
     let tracing = true;
     let postData = req.body;
     try {
@@ -80,7 +80,11 @@ router.post("/settings", function(req,res) {
 
         let result = await batchSettings.updateCurrBatchSettings(postData);
         console.log("result", result);
-        res.json(qResults);
+        if(result.serverStatus != 2 || result.affectedRows != 1){
+            res.status(500).send("Didn't get expected result from db", result);
+        } else {
+            res.json(result);
+        }
     } catch(error) {
         console.log(error);
         res.status(500).send(error);
