@@ -6,6 +6,7 @@ const db = require("../lib/db.js");
 const JSZip = require("jszip");
 
 const batchOps = require("../lib/batchOps");
+const batchSettings = require("../lib/batchSettings");
 
 const cfg = require("../lib/config").Config;
 
@@ -60,131 +61,34 @@ router.get("/processed", function(req, res) {
         });
 });
 
-function getCurrBatchSettings(){
-    return new Promise((resolve, reject) => {
-        let settingsPromise = db.conn.queryPromise("SELECT TrimIndicated,"+
-            "MultiHood,"+
-            "IncludeVU,"+
-            "IncludeMLS,"+
-            "NumPrevYears,"+
-            "SqftRangePctEnabled, SqftRangePct,SqftRangeMin,SqftRangeMax,"+
-            "ClassRange,ClassRangeEnabled,"+
-            "SaleRatioEnabled,SaleRatioMin,SaleRatioMax,"+
-            "PercentGood,PercentGoodEnabled,PercentGoodMin,PercentGoodMax,"+
-            "NetAdj,NetAdjEnabled,"+
-            "ImpLimit,"+
-            "LimitTcadScores,LimitTcadScoresAmount,TcadScoreLimitMin,TcadScoreLimitMax,"+
-            "LimitToCurrentYearLowered,"+
-            "GrossAdjFilterEnabled,"+
-            "ShowTcadScores,ShowSaleRatios,"+
-            "rankByIndicated, " +
-            "SaleTypeQ " +
-            "FROM BATCH_PROP_SETTINGS "+
-            "WHERE id=(SELECT max(id) FROM BATCH_PROP_SETTINGS)");
-
-        settingsPromise.then(qResults => {
-            const results = qResults[0];
-            resolve(results);
-        }).catch(error => {
-            console.log(error);
-            reject(error);
-        });
-    });
-}
-
-router.get("/settings", function(req, res) {
-    const settingsPromise = new Promise((resolve) => {
-        resolve(getCurrBatchSettings());
-    });
-    settingsPromise.then(qResults => {
+router.get("/settings", async function(req, res) {
+    try {
+        let qResults = await batchSettings.getCurrBatchSettings();
         console.log(qResults);
         res.json(qResults);
-    }).catch(error => {
+    } catch(error) {
         console.log(error);
-    });
+        res.status(500).send(error);
+    }
 });
 
-function getColName(string){
-    let colMap = {"onlyLowerComps":"TrimIndicated","multiHood":"MultiHood,","includeVU":"IncludeVU", "mlsMultiYear":"NumPrevYears",
-        "useSqftRangePct":"SqftRangePctEnabled","sqftRangePct":"SqftRangePct","sqftRangeMin":"SqftRangeMin","sqftRangeMax":"SqftRangeMax",
-        "subClassRange":"ClassRange", "subClassRangeEnabled":"ClassRangeEnabled",
-        "ratiosEnabled":"SaleRatioEnabled","saleRatioMin":"SaleRatioMin","saleRatioMax":"SaleRatioMax",
-        "pctGoodRange":"PercentGood","pctGoodRangeEnabled":"PercentGoodEnabled","pctGoodMin":"PercentGoodMin","pctGoodMax":"PercentGoodMax",
-        "netAdjustAmt":"NetAdj","netAdjEnabled":"NetAdjEnabled",
-        "limitImps":"ImpLimit",
-        "tcadScoreLimitEnabled":"LimitTcadScores","tcadScoreLimitPct":"LimitTcadScoresAmount","tcadScoreLimitMin":"TcadScoreLimitMin","tcadScoreLimitMax":"TcadScoreLimitMax",
-        "onlyCurrYearLowered":"LimitToCurrentYearLowered", "grossAdjEnabled":"GrossAdjFilterEnabled",
-        "showTcadScores":"ShowTcadScores",
-        "rankByIndicated":"rankByIndicated",
-        "saleTypeQ":"SaleTypeQ"};
-
-    if(colMap.hasOwnProperty(string)){
-        return colMap[string];
-    }
-
-    console.log("No column found to match ", string);
-    return "";
-}
-
-function copyFields(target, source) {
+router.post("/settings", async function(req,res) {
     let tracing = true;
-    for (let field in source) {
-        // noinspection JSUnfilteredForInLoop
-        if(tracing) console.log("Looking for " + field);
-        let colName = getColName(field);
-        if(tracing) console.log(field + " mapped to colName=" + colName);
-        if (target.hasOwnProperty(colName)) {
-            if(tracing) console.log("Found field " + colName);
-            // noinspection JSUnfilteredForInLoop
-            target[colName] = source[field];
+    let postData = req.body;
+    try {
+        if(tracing) { console.log("postData=", postData); }
+
+        let result = await batchSettings.updateCurrBatchSettings(postData);
+        console.log("result", result);
+        if(result.serverStatus != 2 || result.affectedRows != 1){
+            res.status(500).send("Didn't get expected result from db", result);
+        } else {
+            res.json(result);
         }
+    } catch(error) {
+        console.log(error);
+        res.status(500).send(error);
     }
-    if(tracing) console.log("copyFields target", target);
-}
-
-router.post("/settings", function(req,res) {
-    let updateProm = getCurrBatchSettings();
-
-    updateProm.then(updateJson => {
-        let tracing = true;
-
-        const update = updateJson;
-        if(tracing) console.log("update=", update);
-        let postData = req.body;
-        if(tracing) console.log("postData=", postData);
-        copyFields(update, postData);
-        if(tracing) console.log("updatePostCopy=", update);
-        //todo why do I need this below?
-        update.TrimIndicated = 0;
-        let settingsPromise = db.conn.queryPromise("INSERT INTO BATCH_PROP_SETTINGS " +
-            "SET TrimIndicated = ?, MultiHood = ?, IncludeVU = ?, IncludeMLS = ?, NumPrevYears = ?, " +
-            "SqftRangePctEnabled = ?, SqftRangePct = ?, SqftRangeMin = ?, SqftRangeMax = ?," +
-            "ClassRange = ?, ClassRangeEnabled = ?," +
-            "SaleRatioEnabled = ?, SaleRatioMin = ?, SaleRatioMax = ?, " +
-            "PercentGood = ?, PercentGoodEnabled = ?, PercentGoodMin = ?, PercentGoodMax = ?, " +
-            "NetAdj = ?, NetAdjEnabled = ?, ImpLimit = ?, "+
-            "LimitTcadScores = ?, LimitTcadScoresAmount = ?, TcadScoreLimitMin = ?, TcadScoreLimitMax = ?, "+
-            "LimitToCurrentYearLowered = ?, GrossAdjFilterEnabled = ?, " +
-            "ShowTcadScores = ?, ShowSaleRatios = ?, rankByIndicated = ?, SaleTypeQ = ?",
-            [
-                update["TrimIndicated"], update["MultiHood"], update["IncludeVU"], update["IncludeMLS"], update["NumPrevYears"],
-                update["SqftRangePctEnabled"], update["SqftRangePct"], update["SqftRangeMin"], update["SqftRangeMax"],
-                update["ClassRange"], update["ClassRangeEnabled"],
-                update["SaleRatioEnabled"], update["SaleRatioMin"], update["SaleRatioMax"],
-                update["PercentGood"], update["PercentGoodEnabled"], update["PercentGoodMin"], update["PercentGoodMax"],
-                update["NetAdj"], update["NetAdjEnabled"], update["ImpLimit"],
-                update["LimitTcadScores"],  update["LimitTcadScoresAmount"], update["TcadScoreLimitMin"], update["TcadScoreLimitMax"],
-                update["LimitToCurrentYearLowered"], update["GrossAdjFilterEnabled"],
-                update["ShowTcadScores"], update["ShowSaleRatios"], update["rankByIndicated"], update["SaleTypeQ"]
-            ]
-        );
-        settingsPromise.then(qResults => {
-            console.log("settingsPromise", qResults);
-            res.json(qResults);
-        }).catch(error => {
-            console.log(error);
-        });
-    });
 });
 
 router.get("/summary", function(req, res) {
