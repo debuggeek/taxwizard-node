@@ -7,7 +7,7 @@
     "start:prod": "node ./bin/www",
     "start:dev": "supervisor --inspect ./bin/www",
     "start:aws-stage": "NODE_ENV=stage && node ./bin/www-aws",
-    "start:aws": "NODE_ENV=prod && node ./bin/www-aws",
+    "start:aws": "NODE_ENV=prod && supervisor node ./bin/www-aws",
     "start:local": "node $NODE_DEBUG_OPTION ./bin/www",
     "test": "./node_modules/.bin/mocha --opts ./mocha.opts --recursive ./**/tests/**/*.js --exit"
   },
